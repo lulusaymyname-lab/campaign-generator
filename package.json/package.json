@@ -1,0 +1,9 @@
+{
+  "name": "campaign-generator-api",
+  "version": "1.0.0",
+  "description": "API for generating social media campaigns.",
+  "main": "api/generate-campaign.js",
+  "dependencies": {
+    "node-fetch": "^3.3.2" 
+  }
+}
