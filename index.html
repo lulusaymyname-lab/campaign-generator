@@ -5,180 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ad & Campaign Creator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script id="paypal-sdk-script"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0b0b15;
-            color: #fff;
-            margin: 0;
-        }
-        .loading-overlay {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .ad-preview-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        .select2-container--default .select2-selection--multiple {
-            border-radius: 0.75rem;
-            border: 2px solid #e5e7eb;
-            padding: 0.5rem;
-        }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-        }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-            color: white;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-        .modal.active {
-            display: flex;
-        }
-        
-        /* Scroller Styles */
-        .scroller {
-            max-width: 100%;
-            overflow: hidden;
-            -webkit-mask: linear-gradient(90deg, transparent, white 20%, white 80%, transparent);
-            mask: linear-gradient(90deg, transparent, white 20%, white 80%, transparent);
-        }
-        .scroller__inner {
-            display: flex;
-            gap: 1rem;
-            padding-block: 1rem;
-            width: max-content;
-            animation: scroll 60s linear infinite;
-        }
-        .scroller__inner img {
-            height: 180px; /* Small height as requested */
-            width: auto;
-            border-radius: 0.75rem;
-            object-fit: cover;
-        }
-        .scroller:hover .scroller__inner {
-            animation-play-state: paused;
-        }
-        @keyframes scroll {
-            to {
-                transform: translate(calc(-50% - 0.5rem)); /* -50% for duplicated content, -0.5rem for half the gap */
-            }
-        }
+        body { font-family: 'Inter', sans-serif; background: #0b0b15; color: #fff; margin: 0; }
+        .ad-preview-image { width: 100%; height: 100%; object-fit: cover; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
+        .modal.active { display: flex; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #fff; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
 
-    <!-- =================================================================== -->
-    <!-- Main Landing Page UI                                                -->
-    <!-- =================================================================== -->
-    <div id="landingPage">
-        <!-- Hero Section -->
-        <header class="text-center py-12 px-5 bg-gradient-to-b from-[#1b1b2f] to-[#0b0b15]">
-            <h1 class="text-4xl font-bold mb-2">Soul Tribe Ad & Campaign Generator</h1>
-            <p class="text-gray-300 text-lg">Create scroll-stopping ads in seconds with AI-powered design</p>
-            <a href="#appSections" class="mt-6 inline-block bg-pink-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-pink-700 transition">
-                Try Now (Test Drive)
-            </a>
+    <div id="authSection" class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-gray-800 p-8 rounded-2xl border border-gray-700">
+            <div id="auth-container"></div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <header class="text-center py-6 px-5 bg-gradient-to-b from-[#1b1b2f] to-[#0b0b15]">
+            <h1 class="text-3xl font-bold">Ad & Campaign Generator</h1>
+            <div class="mt-2 text-sm">
+                <span id="userEmail" class="text-indigo-400"></span>
+                <button id="logoutBtn" class="ml-4 text-red-400 hover:text-red-300 font-semibold">(Logout)</button>
+            </div>
         </header>
-
-        <!-- What You Can Create Section (Scroller) -->
-        <section class="py-16 px-6 max-w-7xl mx-auto">
-            <h2 class="text-3xl font-bold text-center mb-4">What You Can Create</h2>
-            <p class="text-center text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
-                Here are real examples generated by the Soul Tribe Ad & Campaign Generator.
-                In just seconds, you can create professional, ready-to-post ads for Instagram, Facebook, X, and Pinterest —
-                tailored to your product or campaign.
-            </p>
-
-            <div class="scroller" data-speed="slow">
-                <div class="scroller__inner">
-                    <!-- Images will be injected here by JS -->
-                </div>
-            </div>
-        </section>
-
-        <!-- New Features Section -->
-        <section class="py-16 px-6 max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Card 1: Launch Ads -->
-                <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700 flex flex-col h-full">
-                    <div class="flex-grow">
-                        <div class="w-12 h-12 bg-indigo-600/20 rounded-full flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-2">Launch Ads Directly to Meta</h3>
-                        <p class="text-gray-400 mb-6">Now, with just a single click, you can launch ads directly from Projects to Meta, saving time and simplifying the process.</p>
-                    </div>
-                    <img src="https://i.imgur.com/RzmcLQd.png" alt="Ad example for Meta launch" class="rounded-xl object-cover w-full h-64 mt-auto">
-                </div>
-                <!-- Card 2: Monitor Performance -->
-                <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700 flex flex-col h-full">
-                    <div class="flex-grow">
-                        <div class="w-12 h-12 bg-pink-600/20 rounded-full flex items-center justify-center mb-4">
-                           <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-2">Monitor Ad Performance & Health</h3>
-                        <p class="text-gray-400 mb-6">Easily monitor ad performance with the new Ad Level View in My Ads. Track key metrics, adjust ad status, and check ad health—all in one place.</p>
-                    </div>
-                    <img src="https://i.imgur.com/h9yR0cZ.png" alt="Ad performance dashboard" class="rounded-xl object-cover w-full h-64 mt-auto">
-                </div>
-            </div>
-        </section>
-
-        <!-- Before & After Section -->
-        <section class="bg-[#1b1b2f] py-16 px-6">
-            <h2 class="text-3xl font-bold text-center mb-10">See the Magic: Before & After</h2>
-            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center text-center md:text-left">
-                <div>
-                    <img src="https://i.imgur.com/PvoIuCN.png" alt="Before: Raw product shot" class="rounded-xl shadow-lg border border-gray-700 mx-auto">
-                    <p class="mt-4 text-gray-400">Before: A standard product image.</p>
-                </div>
-                <div class="relative">
-                    <img src="https://i.imgur.com/sbKrFep.png" alt="After: AI-generated ad" class="rounded-xl shadow-lg border border-pink-500 mx-auto">
-                    <p class="mt-4 text-gray-400">After: A professional, AI-generated ad.</p>
-                    <div class="absolute inset-0 bg-white/10 rounded-xl"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Ad Generator and Campaign Maker Sections -->
-        <div id="appSections" class="py-16 px-6">
-            <!-- App Toggle Buttons -->
+        
+        <div id="appSections" class="py-12 px-6 max-w-7xl mx-auto">
             <div class="flex justify-center space-x-4 mb-10">
                 <button id="showAdGeneratorBtn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-xl transition-colors">Ad Generator</button>
-                <button id="showCampaignMakerBtn" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-xl transition-colors">Campaign Maker</button>
-                <button id="showDashboardBtn" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-xl transition-colors">My Ads Dashboard</button>
+                <button id="showDashboardBtn" class="bg-gray-800 text-white font-bold py-2 px-6 rounded-xl transition-colors">My Ads Dashboard</button>
+                <button id="showPricingBtn" class="bg-gray-800 text-white font-bold py-2 px-6 rounded-xl transition-colors">Subscription</button>
             </div>
 
-            <!-- Ad Generator Section -->
             <div id="adGenerator" class="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
-                <div class="flex-1 flex flex-col space-y-6">
+                 <div class="flex-1 flex flex-col space-y-6">
                     <div class="p-6 bg-gray-800 rounded-2xl border border-gray-700 shadow-sm">
                         <h2 class="text-2xl font-bold text-white mb-4">Generate Ad</h2>
-                        <p class="text-sm text-gray-400 mb-4">Describe the background, product placement, and ad copy style.</p>
-                        <!-- New Disclaimer -->
-                        <div class="bg-gray-700 text-white p-3 rounded-xl mb-4 text-sm border border-gray-600">
-                          <p>
-                            <strong>Heads up!</strong> AI generation can be creative. You may need to run the generation process a few times with different prompts to get your desired result. Be as specific as possible!
-                          </p>
-                        </div>
-                        <textarea id="backgroundPrompt" class="w-full h-24 p-3 text-base text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="A sleek marble podium..."></textarea>
+                        <textarea id="backgroundPrompt" class="w-full h-24 p-3 text-base bg-gray-900 text-white border-2 border-gray-600 rounded-xl" placeholder="A sleek marble podium..."></textarea>
                         <label id="uploadLabel" class="cursor-pointer mt-4 w-full text-gray-200 font-bold py-3 px-6 rounded-xl shadow-md text-center bg-gray-700 hover:bg-gray-600 block transition-colors">
                             Upload Product Image
                             <input type="file" id="productImageUpload" accept="image/*" class="hidden" />
@@ -188,699 +54,59 @@
                     <div id="adCopyContainer" class="p-6 bg-gray-800 rounded-2xl border border-gray-700 hidden">
                         <h3 class="text-xl font-bold mb-2">Generated Ad Copy:</h3>
                         <div id="adCopyText" class="text-gray-300"></div>
-                        <button id="copyAdBtn" class="mt-4 w-full bg-gray-700 text-white font-bold py-3 px-6 rounded-xl hover:bg-gray-600 transition-colors">Copy Ad Text</button>
                     </div>
-                    <button id="resetBtn" class="w-full bg-red-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-red-600 transition-colors">Reset</button>
                 </div>
                 <div class="flex-1 flex flex-col items-center justify-center space-y-4">
-                    <div class="relative w-full aspect-[1/1] overflow-hidden rounded-xl shadow-2xl border border-gray-700">
+                    <div class="relative w-full aspect-[1/1] overflow-hidden rounded-xl shadow-2xl border border-gray-700 bg-gray-900">
                         <img id="adImage" class="ad-preview-image" />
-                        <div id="overlay" class="absolute inset-0 bg-white/70 loading-overlay text-center p-4"><p id="overlayText" class="text-xl text-gray-500">Enter a prompt and upload an image.</p></div>
-                    </div>
-                    <div id="canvasControls" class="w-full hidden">
-                        <button id="downloadBtn" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700 transition-colors">Download Your Ad</button>
-                    </div>
-                    <div id="launchToMetaContainer" class="w-full hidden mt-4">
-                        <h3 class="text-lg font-semibold text-center mb-2">Ready to Launch?</h3>
-                        <button id="launchToMetaBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition-colors">
-                            Launch on Facebook & Instagram
-                        </button>
+                        <div id="overlay" class="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex items-center justify-center text-center p-4">
+                            <div id="overlayContent"><p class="text-xl text-gray-300">Your ad will appear here.</p></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Campaign Maker Section -->
-            <div id="campaignMaker" class="hidden">
-                 <div class="p-6 bg-gray-800 rounded-2xl border border-gray-700 shadow-sm">
-                     <h2 class="text-2xl font-bold text-white mb-4">Create a Campaign</h2>
-                     <p class="text-sm text-gray-400 mb-4">Generate copy and visual concepts for multiple platforms at once.</p>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                         <input type="text" id="productName" class="w-full p-3 text-base text-gray-900 border-2 border-gray-200 rounded-xl" placeholder="Enter Product Name or Type">
-                         <select id="platforms" multiple="multiple" class="w-full"><option value="facebook">Facebook</option><option value="instagram">Instagram</option><option value="pinterest">Pinterest</option><option value="x">X (Twitter)</option></select>
-                     </div>
-                      <label id="campaignUploadLabel" class="cursor-pointer w-full text-gray-200 font-bold py-3 px-6 rounded-xl shadow-md text-center bg-gray-700 hover:bg-gray-600 block transition-colors">
-                          (Optional) Upload Product Image
-                          <input type="file" id="campaignImageUpload" accept="image/*" class="hidden" />
-                      </label>
-                      <button id="generateCampaignBtn" class="mt-4 w-full bg-indigo-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-indigo-700 transition-colors">Generate Campaign</button>
-                 </div>
-                 <div id="campaignOutput" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-            </div>
-
-            <!-- My Ads Dashboard Section -->
             <div id="myAdsDashboardSection" class="hidden">
                 <div class="flex flex-wrap justify-between items-center mb-10 gap-4">
-                    <h2 class="text-3xl font-bold">My Ads Dashboard</h2>
-                    <button id="addNewAdBtn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-xl transition-colors hover:bg-indigo-700">Create New Ad</button>
+                    <h2 class="text-3xl font-bold">My Saved Ads</h2>
                 </div>
-                <div class="max-w-7xl mx-auto">
-                    <!-- Grid for launched ads -->
-                    <div id="adsDashboardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <!-- Initial placeholder/example ad -->
-                        <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-                            <img src="https://i.imgur.com/RzmcLQd.png" alt="Ad Preview" class="w-full h-64 object-cover">
-                            <div class="p-6">
-                                <h3 class="font-semibold text-white mb-2">"Bomber Jacket" Ad</h3>
-                                <p class="text-sm text-gray-400 mb-4">Status: <span class="font-semibold text-green-400">Active</span></p>
-                                <div class="grid grid-cols-3 gap-4 text-center">
-                                    <div>
-                                        <p class="text-xs text-gray-400">Reach</p>
-                                        <p class="text-lg font-bold text-white">12.5K</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-400">Clicks</p>
-                                        <p class="text-lg font-bold text-white">1.2K</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-400">CTR</p>
-                                        <p class="text-lg font-bold text-white">9.6%</p>
-                                    </div>
-                                </div>
-                                <button class="mt-4 w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">View Performance</button>
-                            </div>
-                        </div>
-                         <!-- Second placeholder/example ad from the other image -->
-                         <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-                            <img src="https://i.imgur.com/5dUY1BS.png" alt="Ad Preview" class="w-full h-64 object-cover">
-                             <div class="p-6">
-                                 <h3 class="font-semibold text-white mb-2">"Skincare Essentials" Promo</h3>
-                                 <p class="text-sm text-gray-400 mb-4">Status: <span class="font-semibold text-red-400">Ended</span></p>
-                                 <div class="grid grid-cols-3 gap-4 text-center">
-                                     <div>
-                                         <p class="text-xs text-gray-400">Reach</p>
-                                         <p class="text-lg font-bold text-white">98.1K</p>
-                                     </div>
-                                     <div>
-                                         <p class="text-xs text-gray-400">Clicks</p>
-                                         <p class="text-lg font-bold text-white">9.2K</p>
-                                     </div>
-                                     <div>
-                                         <p class="text-xs text-gray-400">CTR</p>
-                                         <p class="text-lg font-bold text-white">9.4%</p>
-                                     </div>
-                                 </div>
-                                 <button class="mt-4 w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">View Performance</button>
-                             </div>
-                         </div>
-                         <!-- Add new ad card -->
-                         <div id="addNewAdCard" class="bg-gray-800 rounded-2xl border-2 border-dashed border-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors min-h-[400px]">
-                             <div class="text-center text-gray-400">
-                                 <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                 <p class="mt-2 font-semibold">Launch a New Ad</p>
-                             </div>
-                         </div>
-                    </div>
+                <div id="adsDashboardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            </div>
+            
+            <div id="pricingSection" class="hidden bg-[#1b1b2f] py-16 px-6 rounded-2xl">
+                <h2 class="text-3xl font-bold text-center mb-10">Simple Pricing</h2>
+                <div id="subscriptionStatus" class="text-center mb-8"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <div class="bg-[#0b0b15] p-8 rounded-2xl"><h3 class="text-2xl font-bold mb-2">Starter</h3><p class="text-4xl font-bold my-4 text-yellow-400">$19<span class="text-base font-normal text-gray-300"> / mo</span></p><ul class="text-gray-400 space-y-2"><li>50 Ad generations / mo</li></ul><div id="paypal-starter-button-container" class="mt-6"></div></div>
+                    <div class="bg-[#0b0b15] p-8 rounded-2xl border-2 border-pink-500"><h3 class="text-2xl font-bold mb-2">Pro</h3><p class="text-4xl font-bold my-4 text-yellow-400">$49<span class="text-base font-normal text-gray-300"> / mo</span></p><ul class="text-gray-400 space-y-2"><li>200 Ad generations / mo</li></ul><div id="paypal-pro-button-container" class="mt-6"></div></div>
+                    <div class="bg-[#0b0b15] p-8 rounded-2xl"><h3 class="text-2xl font-bold mb-2">Business</h3><p class="text-4xl font-bold my-4 text-yellow-400">$99<span class="text-base font-normal text-gray-300"> / mo</span></p><ul class="text-gray-400 space-y-2"><li>Unlimited generations</li></ul><div id="paypal-business-button-container" class="mt-6"></div></div>
                 </div>
             </div>
-
-        </div>
-        
-        <!-- Limited Time Offer Section -->
-        <section class="bg-gradient-to-r from-purple-600 to-pink-600 py-16 px-6 text-center">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">Your First 10 Ads are on Us!</h2>
-                <p class="text-xl text-gray-100 mb-8">Sign up now for a free account and start creating professional ads instantly. No credit card required.</p>
-                <button onclick="openSignupModal()" class="inline-block bg-white text-pink-600 font-bold px-8 py-4 rounded-xl shadow-lg hover:bg-gray-200 transition-colors">Start Your Free Trial</button>
-            </div>
-        </section>
-
-        <!-- Pricing Section -->
-        <section class="bg-[#1b1b2f] py-16 px-6">
-            <h2 class="text-3xl font-bold text-center mb-10">Simple Pricing</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <div class="bg-[#0b0b15] p-8 rounded-2xl">
-                    <h3 class="text-2xl font-bold mb-2">Starter</h3>
-                    <p class="text-4xl font-bold my-4 text-yellow-400">$19<span class="text-base font-normal text-gray-300"> / month</span></p>
-                    <p class="text-gray-400">50 Ad downloads / mo<br>1 Brand Kit<br>Basic analytics</p>
-                    <div id="paypal-starter-button-container" class="mt-6"></div>
-                </div>
-                <div class="bg-[#0b0b15] p-8 rounded-2xl border-2 border-pink-500">
-                    <h3 class="text-2xl font-bold mb-2">Pro</h3>
-                    <p class="text-4xl font-bold my-4 text-yellow-400">$49<span class="text-base font-normal text-gray-300"> / mo</span></p>
-                    <p class="text-gray-400">200 Ad downloads / mo<br>3 Brand Kits<br>A/B variants</p>
-                    <div id="paypal-pro-button-container" class="mt-6"></div>
-                </div>
-                <div class="bg-[#0b0b15] p-8 rounded-2xl">
-                    <h3 class="text-2xl font-bold mb-2">Business</h3>
-                    <p class="text-4xl font-bold my-4 text-yellow-400">$99<span class="text-base font-normal text-gray-300"> / mo</span></p>
-                    <p class="text-gray-400">Unlimited downloads<br>5 seats included<br>API access</p>
-                    <div id="paypal-business-button-container" class="mt-6"></div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- Sign-up Modal -->
-    <div id="signupModal" class="modal">
-        <div class="bg-gray-800 rounded-2xl shadow-lg max-w-sm w-full p-8 relative border border-gray-700 text-white">
-            <button onclick="closeSignupModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-            <h2 class="text-3xl font-extrabold text-center mb-4">Start Your Free Trial</h2>
-            <p class="text-center text-gray-400 mb-6">Enter your email to get started. No credit card needed!</p>
-            <form id="signupForm" class="flex flex-col space-y-4">
-                <input type="email" id="signupEmail" placeholder="Enter your email" required class="p-3 rounded-xl border border-gray-700 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-pink-500">
-                <button type="submit" class="bg-pink-600 text-white font-bold py-3 rounded-xl hover:bg-pink-700 transition-colors">Start Free Trial</button>
-            </form>
         </div>
     </div>
+
+    <div id="messageBox" class="fixed inset-x-0 top-4 mx-auto p-4 bg-green-500 text-white rounded-lg shadow-lg text-center z-50 transform -translate-y-full opacity-0 max-w-md"></div>
     
-    <!-- Auth Modal -->
-    <div id="authModal" class="modal">
-        <div class="max-w-md w-full bg-gray-800 p-8 rounded-2xl border border-gray-700">
-            <h2 id="authModalTitle" class="text-3xl font-bold text-center mb-6 text-white">Sign Up</h2>
-            <form id="authModalForm" class="space-y-4">
-                <div>
-                    <input type="email" id="modalEmail" placeholder="Email" class="w-full p-4 bg-gray-900 border-2 border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors" required>
-                </div>
-                <div>
-                    <input type="password" id="modalPassword" placeholder="Password" class="w-full p-4 bg-gray-900 border-2 border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors" required>
-                </div>
-                <button type="submit" id="authModalBtn" class="w-full bg-indigo-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-indigo-700 transition-colors">Sign Up</button>
-            </form>
-            <div class="mt-4 text-center text-gray-400">
-                <span id="toggleModalAuth">Already have an account? <a href="#" class="text-indigo-400 hover:underline">Log in</a></span>
-            </div>
-            <p id="authModalMessage" class="mt-4 text-center text-sm"></p>
-        </div>
-    </div>
-
-    <!-- Meta Connect Modal -->
-    <div id="metaConnectModal" class="modal">
-        <div class="bg-gray-800 rounded-2xl shadow-lg max-w-sm w-full p-8 relative border border-gray-700 text-white">
-            <button onclick="closeMetaConnectModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-            <h2 class="text-3xl font-extrabold text-center mb-4">Connect to Meta Ads</h2>
-            <p class="text-center text-gray-400 mb-6">Please enter your Meta Ad Account ID to launch your campaign.</p>
-            <div class="flex flex-col space-y-4">
-                <input type="text" id="metaAdAccountId" placeholder="Enter your Meta Ad Account ID" required class="p-3 rounded-xl border border-gray-700 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button id="connectAndLaunchBtn" class="bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">Connect & Launch</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Message Box for Alerts -->
-    <div id="messageBox" class="fixed inset-x-0 top-4 mx-auto p-4 bg-green-500 text-white rounded-lg shadow-lg text-center z-50 transform -translate-y-full opacity-0"></div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://www.paypal.com/sdk/js?client-id=AQRSVj2hhAqWy7TCjAWRB4mxj5Y3B87JdMGtBUIGCEKMFMWLvep2pRGDGyjTebgI2N760RB1jUrsmZGW&vault=true&intent=subscription"></script>
-
     <script type="module">
-        // ** IMPORTANT: Manually paste your Supabase keys here **
-        const SUPABASE_URL = "https://abfbmvrcmciblojurolm.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiZmJtdnJjbWNpYmxvanVyb2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NTA4NTksImV4cCI6MjA3MjQyNjg1OX0.fLBlkFfewA6l9LiJSC82nIIZyusCtVd4ptzHT62Zi_U";
-        
-        // --- Error Check: Do not deploy with placeholders! ---
-        if (SUPABASE_URL.includes("PASTE_YOUR_SUPABASE_URL_HERE") || SUPABASE_ANON_KEY.includes("PASTE_YOUR_SUPABASE_ANON_KEY_HERE")) {
-             document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen"><p class="text-red-500 font-bold text-center">Application Error: Supabase keys are not configured. Please edit the index.html file to add your keys and redeploy.</p></div>';
-             throw new Error("Supabase keys are not configured.");
+        // 🔑 Supabase Configuration (your real keys are here)
+        const SUPABASE_URL = "https://abfbmvrcmciblojurolm.supabase.co";   // ✅ your Project URL
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiZmJtdnJjbWNpYmxvanVyb2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NTA4NTksImV4cCI6MjA3MjQyNjg1OX0.fLBlkFfewA6l9LiJSC82nIIZyusCtVd4ptzHT62Zi_U";   // ✅ your anon key
+
+        // ✅ Only show error if placeholders are still there
+        if (SUPABASE_URL.includes("YOUR_PROJECT_URL") || SUPABASE_ANON_KEY.includes("YOUR_SUPABASE_ANON_KEY_HERE")) {
+            document.body.innerHTML = '<div class="text-red-500 text-center p-8">Application Error: Supabase keys have not been set in index.html. Please paste your keys and redeploy.</div>';
+            throw new Error("Supabase keys are not configured.");
         }
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let userSession = null;
-        let isTrial = true;
-
-        const authBtn = document.getElementById('authBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userEmailSpan = document.getElementById('userEmail');
-        const signupModal = document.getElementById('signupModal');
-        const authModal = document.getElementById('authModal');
-        const signupForm = document.getElementById('signupForm');
-        const signupEmailInput = document.getElementById('signupEmail');
-        const authModalForm = document.getElementById('authModalForm');
-        const authModalTitle = document.getElementById('authModalTitle');
-        const authModalBtn = document.getElementById('authModalBtn');
-        const toggleModalAuth = document.getElementById('toggleModalAuth');
-        const authModalMessage = document.getElementById('authModalMessage');
-        const startTrialBtn = document.getElementById('startTrialBtn');
-
-        const landingPage = document.getElementById('landingPage');
-        const appSections = document.getElementById('appSections');
-        const showAdGeneratorBtn = document.getElementById('showAdGeneratorBtn');
-        const showCampaignMakerBtn = document.getElementById('showCampaignMakerBtn');
-        const showDashboardBtn = document.getElementById('showDashboardBtn');
-        const adGenerator = document.getElementById('adGenerator');
-        const campaignMaker = document.getElementById('campaignMaker');
-        const myAdsDashboardSection = document.getElementById('myAdsDashboardSection');
-        const addNewAdCard = document.getElementById('addNewAdCard');
-        const adImage = document.getElementById('adImage');
-
-        let isLoginModal = false;
-        let uploadedProductImage = null;
-        let finalAdImageBase64 = null;
-        let campaignImageBase64 = null;
-
-        const adCopyText = document.getElementById('adCopyText');
-        const adCopyContainer = document.getElementById('adCopyContainer');
-        const backgroundPromptInput = document.getElementById('backgroundPrompt');
-        const generateAdBtn = document.getElementById('generateAdBtn');
-        const productImageUpload = document.getElementById('productImageUpload');
-        const overlay = document.getElementById('overlay');
-        const overlayText = document.getElementById('overlayText');
-        const uploadLabel = document.getElementById('uploadLabel');
-        const canvasControls = document.getElementById('canvasControls');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const launchToMetaContainer = document.getElementById('launchToMetaContainer');
-        const launchToMetaBtn = document.getElementById('launchToMetaBtn');
-        const metaConnectModal = document.getElementById('metaConnectModal');
-        const metaAdAccountIdInput = document.getElementById('metaAdAccountId');
-        const connectAndLaunchBtn = document.getElementById('connectAndLaunchBtn');
-
-        const productNameInput = document.getElementById('productName');
-        const generateCampaignBtn = document.getElementById('generateCampaignBtn');
-        const campaignOutput = document.getElementById('campaignOutput');
-        const campaignImageUpload = document.getElementById('campaignImageUpload');
-        const campaignUploadLabel = document.getElementById('campaignUploadLabel');
-        const messageBox = document.getElementById('messageBox');
-        const adsDashboardGrid = document.getElementById('adsDashboardGrid');
-
-        // --- Auth & UI State Management ---
-        const updateUI = (session) => {
-            if (session) {
-                userSession = session;
-                userEmailSpan.textContent = session.user.email;
-                authBtn.classList.add('hidden');
-                logoutBtn.classList.remove('hidden');
-                landingPage.classList.add('hidden');
-                appSections.classList.remove('hidden');
-                fetchUserAds(session.user.id);
-            } else {
-                userSession = null;
-                userEmailSpan.textContent = '';
-                authBtn.classList.remove('hidden');
-                logoutBtn.classList.add('hidden');
-                landingPage.classList.remove('hidden');
-                appSections.classList.add('hidden');
-            }
-        };
-
-        db.auth.onAuthStateChange((event, session) => {
-            updateUI(session);
-        });
-
-        // --- Modals ---
-        window.openSignupModal = () => signupModal.classList.add('active');
-        window.closeSignupModal = () => signupModal.classList.remove('active');
-        window.openAuthModal = () => authModal.classList.add('active');
-        window.closeAuthModal = () => authModal.classList.remove('active');
-        window.openMetaConnectModal = () => metaConnectModal.classList.add('active');
-        window.closeMetaConnectModal = () => metaConnectModal.classList.remove('active');
-
-        // --- Messaging ---
-        function showMessageBox(message, isError = false) {
-            messageBox.textContent = message;
-            messageBox.className = `fixed inset-x-0 top-4 mx-auto p-4 rounded-lg shadow-lg text-center z-50 transform max-w-md transition-all duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} translate-y-0 opacity-100`;
-            setTimeout(() => {
-                messageBox.classList.remove('opacity-100', 'translate-y-0');
-                messageBox.classList.add('opacity-0', '-translate-y-full');
-            }, 3000);
-        }
-        
-        // --- Core Functions ---
-        const checkAuth = (message) => {
-            if (!userSession) {
-                showMessageBox(message, true);
-                openAuthModal();
-                return false;
-            }
-            return true;
-        };
-
-        // --- Utility Functions ---
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-        function downloadBase64Image(base64Data, filename) {
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = base64Data;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        // --- API Calls ---
-        async function callApi(endpoint, body) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'API call failed.');
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('API call error:', error);
-                throw error;
-            }
-        }
-        
-        // --- Event Listeners ---
-        authBtn.addEventListener('click', openAuthModal);
-        logoutBtn.addEventListener('click', () => db.auth.signOut());
-        
-        startTrialBtn.addEventListener('click', openAuthModal);
-
-        authModalForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('modalEmail').value;
-            const password = document.getElementById('modalPassword').value;
-            authModalMessage.textContent = '';
-            authModalBtn.disabled = true;
-            authModalBtn.textContent = 'Loading...';
-            try {
-                if (isLoginModal) {
-                    const { error } = await db.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                } else {
-                    const { data, error } = await db.auth.signUp({ email, password });
-                    if (error) throw error;
-                    if (data.user) {
-                        await db.from('users').insert({ email, user_id: data.user.id });
-                    }
-                }
-                closeAuthModal();
-                showMessageBox("Success!", false);
-            } catch (error) {
-                authModalMessage.textContent = error.message;
-                showMessageBox('Login failed.', true);
-            } finally {
-                authModalBtn.disabled = false;
-                authModalBtn.textContent = isLoginModal ? 'Log In' : 'Sign Up';
-            }
-        });
-        
-        toggleModalAuth.addEventListener('click', (e) => {
-            e.preventDefault();
-            isLoginModal = !isLoginModal;
-            authModalTitle.textContent = isLoginModal ? 'Log In' : 'Sign Up';
-            authModalBtn.textContent = isLoginModal ? 'Log In' : 'Sign Up';
-            toggleModalAuth.innerHTML = isLoginModal ? 'Don\'t have an account? <a href="#" class="text-indigo-400 hover:underline">Sign up</a>' : 'Already have an account? <a href="#" class="text-indigo-400 hover:underline">Log in</a>';
-            authModalMessage.textContent = '';
-        });
-        
-        showAdGeneratorBtn.addEventListener('click', () => {
-            landingPage.classList.add('hidden');
-            appSections.classList.remove('hidden');
-            showAdGeneratorBtn.classList.add('bg-indigo-600', 'text-white');
-            showCampaignMakerBtn.classList.remove('bg-indigo-600', 'text-white');
-            showDashboardBtn.classList.remove('bg-indigo-600', 'text-white');
-            adGenerator.classList.remove('hidden');
-            campaignMaker.classList.add('hidden');
-            myAdsDashboardSection.classList.add('hidden');
-        });
-
-        showCampaignMakerBtn.addEventListener('click', () => {
-            landingPage.classList.add('hidden');
-            appSections.classList.remove('hidden');
-            showCampaignMakerBtn.classList.add('bg-indigo-600', 'text-white');
-            showAdGeneratorBtn.classList.remove('bg-indigo-600', 'text-white');
-            showDashboardBtn.classList.remove('bg-indigo-600', 'text-white');
-            campaignMaker.classList.remove('hidden');
-            adGenerator.classList.add('hidden');
-            myAdsDashboardSection.classList.add('hidden');
-        });
-
-        showDashboardBtn.addEventListener('click', () => {
-            landingPage.classList.add('hidden');
-            appSections.classList.remove('hidden');
-            showDashboardBtn.classList.add('bg-indigo-600', 'text-white');
-            showAdGeneratorBtn.classList.remove('bg-indigo-600', 'text-white');
-            showCampaignMakerBtn.classList.remove('bg-indigo-600', 'text-white');
-            myAdsDashboardSection.classList.remove('hidden');
-            adGenerator.classList.add('hidden');
-            campaignMaker.classList.add('hidden');
-            if (userSession) fetchUserAds(userSession.user.id);
-        });
-        
-        // --- Ad Generator Logic ---
-        productImageUpload.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                uploadedProductImage = await fileToBase64(file);
-                adImage.src = `data:image/jpeg;base64,${uploadedProductImage}`;
-                overlay.classList.add('hidden');
-                showMessageBox("Image uploaded successfully!", false);
-            }
-        });
-
-        generateAdBtn.addEventListener('click', async () => {
-            if (!checkAuth("You must be logged in to generate an ad.")) return;
-            if (!uploadedProductImage) { showMessageBox("Please upload a product image.", true); return; }
-            if (!backgroundPromptInput.value) { showMessageBox("Please enter a background prompt.", true); return; }
-
-            generateAdBtn.disabled = true;
-            generateAdBtn.textContent = 'Generating...';
-            overlay.classList.remove('hidden');
-            overlayText.innerHTML = `<div class="spinner"></div><p class="mt-4 text-gray-500 text-lg">Generating ad...</p>`;
-
-            try {
-                const data = await callApi('/api/generate', {
-                    image: uploadedProductImage,
-                    prompt: backgroundPromptInput.value,
-                    action: 'ad'
-                });
-
-                if (data.imageUrl && data.adCopy) {
-                    adImage.src = data.imageUrl;
-                    adCopyText.textContent = data.adCopy;
-                    adCopyContainer.classList.remove('hidden');
-                    overlay.classList.add('hidden');
-                    downloadBtn.classList.remove('hidden');
-                    launchToMetaContainer.classList.remove('hidden');
-                    await saveAdToDb(data.imageUrl, data.adCopy, backgroundPromptInput.value);
-                    showMessageBox("Ad generated and saved!", false);
-                } else {
-                    throw new Error('Incomplete data received from API.');
-                }
-            } catch (error) {
-                showMessageBox(`Error: ${error.message}`, true);
-                overlayText.innerHTML = `Error: ${error.message}`;
-            } finally {
-                generateAdBtn.disabled = false;
-                generateAdBtn.textContent = 'Generate Ad';
-            }
-        });
-
-        resetBtn.addEventListener('click', () => {
-            backgroundPromptInput.value = '';
-            productImageUpload.value = '';
-            uploadedProductImage = null;
-            adImage.src = '';
-            adCopyContainer.classList.add('hidden');
-            overlay.classList.remove('hidden');
-            overlayText.innerHTML = `<p class="text-xl text-gray-500">Enter a prompt and upload an image.</p>`;
-            downloadBtn.classList.add('hidden');
-            launchToMetaContainer.classList.add('hidden');
-            showMessageBox("Generator has been reset.", false);
-        });
-
-        downloadBtn.addEventListener('click', () => {
-            const imgUrl = adImage.src;
-            if (imgUrl) {
-                const link = document.createElement('a');
-                link.download = 'generated-ad.png';
-                link.href = imgUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        });
-
-        launchToMetaBtn.addEventListener('click', () => {
-             if (!checkAuth("You must be logged in to launch to Meta.")) return;
-             // Check if an ad is generated
-             if (!adImage.src) {
-                 showMessageBox("Please generate an ad first.", true);
-                 return;
-             }
-             // Open the Meta connect modal
-             openMetaConnectModal();
-        });
-
-        connectAndLaunchBtn.addEventListener('click', async () => {
-            const adAccountId = metaAdAccountIdInput.value.trim();
-            if (!adAccountId) {
-                showMessageBox("Please enter a Meta Ad Account ID.", true);
-                return;
-            }
-            showMessageBox("Launching campaign...", false);
-            connectAndLaunchBtn.disabled = true;
-
-            try {
-                // Simulate a call to a Meta Ads API. In a real app, this would be a backend call.
-                await callApi('/api/generate', {
-                    adAccountId,
-                    image: adImage.src,
-                    copy: adCopyText.textContent,
-                    action: 'launch'
-                });
-                showMessageBox("Campaign launched to Meta!", false);
-            } catch (error) {
-                showMessageBox(`Failed to launch campaign: ${error.message}`, true);
-            } finally {
-                connectAndLaunchBtn.disabled = false;
-                closeMetaConnectModal();
-            }
-        });
-        
-        // --- Dashboard Logic ---
-        const saveAdToDb = async (imageUrl, adCopy, prompt) => {
-            if (!userSession) return;
-            try {
-                await db.from('ads').insert({
-                    user_id: userSession.user.id,
-                    image_url: imageUrl,
-                    ad_copy: adCopy,
-                    prompt: prompt,
-                });
-            } catch (error) {
-                console.error("Error saving ad:", error);
-            }
-        };
-
-        const fetchUserAds = async (userId) => {
-            try {
-                const { data: ads, error } = await db.from('ads').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-                if (error) throw error;
-                displayAds(ads);
-            } catch (error) {
-                console.error("Error fetching ads:", error);
-                adsDashboardGrid.innerHTML = '<p class="text-center text-gray-400 col-span-full">Failed to load ads.</p>';
-            }
-        };
-
-        const displayAds = (ads) => {
-            adsDashboardGrid.innerHTML = '';
-            if (ads.length === 0) {
-                adsDashboardGrid.innerHTML = '<p class="text-center text-gray-400 col-span-full">You have no saved ads yet. Go to the Ad Generator to create one!</p>';
-            }
-            ads.forEach(ad => {
-                const adCard = document.createElement('div');
-                adCard.className = 'bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden';
-                adCard.innerHTML = `
-                    <img src="${ad.image_url}" alt="Ad Preview" class="w-full h-64 object-cover">
-                    <div class="p-6">
-                        <h3 class="font-semibold text-white mb-2">${ad.prompt || "Generated Ad"}</h3>
-                        <p class="text-sm text-gray-400 mb-4 truncate">${ad.ad_copy}</p>
-                        <div class="grid grid-cols-3 gap-4 text-center">
-                            <div><p class="text-xs text-gray-400">Reach</p><p class="text-lg font-bold text-white">12.5K</p></div>
-                            <div><p class="text-xs text-gray-400">Clicks</p><p class="text-lg font-bold text-white">1.2K</p></div>
-                            <div><p class="text-xs text-gray-400">CTR</p><p class="text-lg font-bold text-white">9.6%</p></div>
-                        </div>
-                        <button class="mt-4 w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">View Performance</button>
-                    </div>
-                `;
-                adsDashboardGrid.appendChild(adCard);
-            });
-             const addNewAdCard = document.getElementById('addNewAdCard');
-             adsDashboardGrid.appendChild(addNewAdCard);
-        };
-        
-        // --- Final setup ---
-        $(document).ready(function() {
-            $('#platforms').select2({
-                placeholder: 'Select platforms'
-            });
-            const scrollerInner = document.querySelector('.scroller__inner');
-            const carouselData = [
-                "https://i.imgur.com/RCRgEIj.png",
-                "https://i.imgur.com/PvoIuCN.png",
-                "https://i.imgur.com/sbKrFep.png",
-                "https://i.imgur.com/NXeFCWd.png",
-                "https://i.imgur.com/9NFivHj.png",
-                "https://i.imgur.com/ozTttVi.png",
-                "https://i.imgur.com/Kn25ag2.png",
-                "https://i.imgur.com/yZgDYMe.png",
-                "https://i.imgur.com/AgtcZ2r.png",
-                "https://i.imgur.com/Vzx5EZ0.png",
-                "https://i.imgur.com/Gr7uHLH.png",
-                "https://i.imgur.com/zAQhPWu.png",
-                "https://i.imgur.com/HIxo7BS.png",
-                "https://i.imgur.com/4mfZLFF.png",
-                "https://i.imgur.com/CgRamm8.png",
-                "https://i.imgur.com/MxWnqDu.png",
-                "https://i.imgur.com/vBK0u09.png",
-                "https://i.imgur.com/WbD8Fm4.png",
-                "https://i.imgur.com/5dUY1BS.png",
-                "https://i.imgur.com/gsaAUW7.png",
-                "https://i.imgur.com/X6v7j3R.png",
-                "https://i.imgur.com/AcId90s.png",
-                "https://i.imgur.com/HBhYJio.png",
-                "https://i.imgur.com/ozbQKtz.png",
-                "https://i.imgur.com/90tB2Gc.png",
-                "https://i.imgur.com/wnNbifw.png",
-                "https://i.imgur.com/lO7J2VN.png",
-                "https://i.imgur.com/F1gINsg.png",
-                "https://i.imgur.com/ozNyrpZ.png",
-                "https://i.imgur.com/NCisB59.png",
-                "https://i.imgur.com/wp5Iaq5.png",
-                "https://i.imgur.com/wyilFF1.png",
-                "https://i.imgur.com/r62CugC.png"
-            ];
-            function initializeScroller() {
-                if (!scrollerInner) return;
-                scrollerInner.innerHTML = '';
-                carouselData.forEach(src => {
-                    const img = document.createElement('img');
-                    img.src = src;
-                    img.loading = 'lazy';
-                    img.alt = 'AI-generated ad example';
-                    scrollerInner.appendChild(img);
-                });
-                carouselData.forEach(src => {
-                    const img = document.createElement('img');
-                    img.src = src;
-                    img.loading = 'lazy';
-                    img.alt = 'AI-generated ad example';
-                    scrollerInner.appendChild(img);
-                });
-            }
-            initializeScroller();
-        });
-        
-        // New tab logic for landing page scroll buttons
-        document.getElementById('startTrialBtn').addEventListener('click', (e) => {
-             e.preventDefault();
-             openAuthModal();
-        });
-
-        // Set up tab buttons for the main app
-        const appTabs = [
-            { btn: showAdGeneratorBtn, content: adGenerator },
-            { btn: showCampaignMakerBtn, content: campaignMaker },
-            { btn: showDashboardBtn, content: myAdsDashboardSection }
-        ];
-
-        appTabs.forEach(tab => {
-            tab.btn.addEventListener('click', () => {
-                appTabs.forEach(t => {
-                    t.btn.classList.remove('bg-indigo-600', 'text-white');
-                    t.btn.classList.add('bg-gray-200', 'text-gray-800');
-                    t.content.classList.add('hidden');
-                });
-                tab.btn.classList.add('bg-indigo-600', 'text-white');
-                tab.btn.classList.remove('bg-gray-200', 'text-gray-800');
-                tab.content.classList.remove('hidden');
-
-                if (tab.btn === showDashboardBtn && userSession) {
-                    fetchUserAds(userSession.user.id);
-                }
-            });
-        });
+        // ... rest of your script (auth, ad generator, PayPal, etc.) goes here ...
     </script>
 </body>
 </html>
+
 
 
 
